@@ -1,0 +1,7 @@
+{
+  "venv": "", 
+  "project-type": "Import from sources", 
+  "name": "InterruptsWithADCAndID", 
+  "license": "GNU General Public License v3", 
+  "description": "This is Python Lab 4"
+}
