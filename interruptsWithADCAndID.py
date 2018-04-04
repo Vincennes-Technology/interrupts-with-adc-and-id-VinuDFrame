@@ -16,11 +16,16 @@ oldprintLCDString = None
 MAXVOLTAGE = 3.3
 MAXADCVALUE = 255
 LOOPDELAY = 0.2
-ADC_INTERRUPT = 17
-ID_INTERRUPT = 23
 DEBOUNCE_TIME = 300
 ADC_CHANNEL = 0
-
+MIN_IP_ADDRESS_LENGTH = 8
+IP_ADDRESS_WAIT = 2
+#GPIO Assignments
+ADC_CS = 24
+ADC_CLK = 25
+ADC_DIO = 8
+ADC_INTERRUPT = 17
+IP_INTERRUPT = 23
 
 import time
 import RPi.GPIO as GPIO
@@ -37,16 +42,14 @@ GPIO.setmode(GPIO.BCM)
 # pulled up to avoid false detection.
 # Both ports are wired to connect to GND on button press.
 # So we'll be setting up falling edge detection for both
-GPIO.setup(ID_INTERRUPT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(ADC_INTERRUPT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(IP_INTERRUPT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # ADC setup code
 #This is where you change the pins for the ADC if needed
-ADC.setup(cs=24, clk=25, dio=8)
+ADC.setup(cs=ADC_CS, clk=ADC_CLK, dio=ADC_DIO)
 
 #get IP and Host name (from ipDisplay.py)
-MIN_IP_ADDRESS_LENGTH = 8
-IP_ADDRESS_WAIT = 2
 while True:
     IPaddr = subprocess.check_output(['hostname', '-I'])
     if len(IPaddr) > MIN_IP_ADDRESS_LENGTH:
@@ -61,13 +64,13 @@ displayText = IPaddr + Name
 # They both modify the global variable ADCSelect
 
 
-def my_callbackADC(channel):
+def callbackADC(channel):
     """ Threaded callback function for when the ADC button is pressed"""
     global ADCSelect
     ADCSelect = True
 
 
-def my_callbackIP(channel):
+def callbackIP(channel):
     """ Threaded callback function for when the ID button is pressed"""
     global ADCSelect
     ADCSelect = False
@@ -77,12 +80,10 @@ def my_callbackIP(channel):
 # regardless of whatever else is happening in the program, the call back
 # function will be run
 # each button is "debounced" by disabling the function for DEBOUNCE_TIME ms
-    #lint:disable
 GPIO.add_event_detect(ADC_INTERRUPT, GPIO.FALLING,
-     callback=my_callbackADC, bouncetime=DEBOUNCE_TIME)
-GPIO.add_event_detect(ID_INTERRUPT, GPIO.FALLING,
-     callback=my_callbackIP, bouncetime=DEBOUNCE_TIME)
-    #lint:enable
+     callback=callbackADC, bouncetime=DEBOUNCE_TIME)
+GPIO.add_event_detect(IP_INTERRUPT, GPIO.FALLING,
+     callback=callbackIP, bouncetime=DEBOUNCE_TIME)
 
 
 def ADCread():
